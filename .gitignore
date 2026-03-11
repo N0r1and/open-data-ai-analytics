@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.ipynb_checkpoints/
+
+# Віртуальне середовище
+.venv/
+venv/
+.env
+
+# Великі файли даних (сирі дані не зберігаємо в git)
+data/raw/
+
+# Операційна система
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.jupyter/
+
+# Результати / кеш
+*.log
+*.tmp
