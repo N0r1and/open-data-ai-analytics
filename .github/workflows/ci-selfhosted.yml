@@ -1,0 +1,52 @@
+name: CI (self-hosted Windows)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-visualization-local:
+    runs-on: [self-hosted, Windows]
+
+    steps:
+      - name: Checkout коду
+        uses: actions/checkout@v4
+
+      - name: Перевірка Python
+        run: |
+          python --version
+          pip --version
+
+      - name: Встановлення залежностей
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Підготовка даних
+        run: |
+          if not exist "data\raw" mkdir "data\raw"
+          if exist "data\129-indeksi-tsin-na-zhitlo.xlsx" (
+            copy "data\129-indeksi-tsin-na-zhitlo.xlsx" "data\raw\"
+            echo Датасет скопійовано
+          ) else (
+            echo УВАГА: датасет не знайдено
+          )
+        shell: cmd
+
+      - name: Запуск data_load
+        run: |
+          if not exist "artifacts\data_load" mkdir "artifacts\data_load"
+          python src/data_load.py > artifacts\data_load\run.log 2>&1
+        shell: cmd
+
+      - name: Запуск visualization
+        run: |
+          if not exist "artifacts\visualization" mkdir "artifacts\visualization"
+          python src/visualization.py > artifacts\visualization\run.log 2>&1
+        shell: cmd
+
+      - name: Завантаження артефактів
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-selfhosted-windows
+          path: artifacts/
+          retention-days: 7

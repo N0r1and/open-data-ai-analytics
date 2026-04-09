@@ -1,0 +1,88 @@
+name: CI (modules)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      module:
+        description: "Який модуль запустити"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - data_load
+          - data_quality_analysis
+          - data_research
+          - visualization
+
+jobs:
+  run-modules:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [data_load, data_quality_analysis, data_research, visualization]
+
+    # Якщо workflow_dispatch і обрано конкретний модуль — пропускаємо решту
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.module == 'all' ||
+      github.event.inputs.module == matrix.module
+
+    steps:
+      - name: Checkout коду
+        uses: actions/checkout@v4
+
+      - name: Налаштування Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Встановлення залежностей
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Копіюємо датасет з data/ у data/raw/ для модулів data_load
+      # У CI датасет зберігаємо прямо в репо (в data/, а не data/raw/)
+      - name: Підготовка даних
+        run: |
+          mkdir -p data/raw
+          if [ -f "data/129-indeksi-tsin-na-zhitlo.xlsx" ]; then
+            cp data/129-indeksi-tsin-na-zhitlo.xlsx data/raw/
+            echo "Датасет знайдено і скопійовано"
+          else
+            echo "УВАГА: датасет не знайдено, data_load може завершитись з помилкою"
+          fi
+
+      # Модуль data_load — генерує CSV для наступних модулів
+      - name: Запуск data_load (підготовка CSV)
+        if: matrix.module != 'data_load'
+        run: |
+          mkdir -p artifacts/data_load
+          python src/data_load.py 2>&1 | tee artifacts/data_load/run.log || true
+
+      # Запуск основного модуля
+      - name: Запуск модуля ${{ matrix.module }}
+        run: |
+          mkdir -p artifacts/${{ matrix.module }}
+          python src/${{ matrix.module }}.py 2>&1 | tee artifacts/${{ matrix.module }}/run.log
+
+      # Копіюємо графіки у artifacts для visualization
+      - name: Копіювання графіків
+        if: matrix.module == 'visualization'
+        run: |
+          cp -r artifacts/visualization/. artifacts/visualization/ || true
+
+      - name: Завантаження артефактів
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ matrix.module }}
+          path: artifacts/${{ matrix.module }}
+          retention-days: 7
