@@ -20,20 +20,12 @@ on:
           - visualization
 
 jobs:
-  run-modules:
+  data_load:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        module: [data_load, data_quality_analysis, data_research, visualization]
-
-    # Якщо workflow_dispatch і обрано конкретний модуль — пропускаємо решту
     if: >
       github.event_name != 'workflow_dispatch' ||
       github.event.inputs.module == 'all' ||
-      github.event.inputs.module == matrix.module
-
+      github.event.inputs.module == 'data_load'
     steps:
       - name: Checkout коду
         uses: actions/checkout@v4
@@ -49,8 +41,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Копіюємо датасет з data/ у data/raw/ для модулів data_load
-      # У CI датасет зберігаємо прямо в репо (в data/, а не data/raw/)
       - name: Підготовка даних
         run: |
           mkdir -p data/raw
@@ -58,31 +48,143 @@ jobs:
             cp data/129-indeksi-tsin-na-zhitlo.xlsx data/raw/
             echo "Датасет знайдено і скопійовано"
           else
-            echo "УВАГА: датасет не знайдено, data_load може завершитись з помилкою"
+            echo "УВАГА: датасет не знайдено"
           fi
 
-      # Модуль data_load — генерує CSV для наступних модулів
-      - name: Запуск data_load (підготовка CSV)
-        if: matrix.module != 'data_load'
+      - name: Запуск data_load
         run: |
           mkdir -p artifacts/data_load
-          python src/data_load.py 2>&1 | tee artifacts/data_load/run.log || true
-
-      # Запуск основного модуля
-      - name: Запуск модуля ${{ matrix.module }}
-        run: |
-          mkdir -p artifacts/${{ matrix.module }}
-          python src/${{ matrix.module }}.py 2>&1 | tee artifacts/${{ matrix.module }}/run.log
-
-      # Копіюємо графіки у artifacts для visualization
-      - name: Копіювання графіків
-        if: matrix.module == 'visualization'
-        run: |
-          cp -r artifacts/visualization/. artifacts/visualization/ || true
+          python src/data_load.py 2>&1 | tee artifacts/data_load/run.log
 
       - name: Завантаження артефактів
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.module }}
-          path: artifacts/${{ matrix.module }}
+          name: artifacts-data_load
+          path: artifacts/data_load
+          retention-days: 7
+
+  data_quality_analysis:
+    runs-on: ubuntu-latest
+    needs: data_load
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.module == 'all' ||
+      github.event.inputs.module == 'data_quality_analysis'
+    steps:
+      - name: Checkout коду
+        uses: actions/checkout@v4
+
+      - name: Налаштування Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Встановлення залежностей
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Підготовка даних
+        run: |
+          mkdir -p data/raw
+          if [ -f "data/129-indeksi-tsin-na-zhitlo.xlsx" ]; then
+            cp data/129-indeksi-tsin-na-zhitlo.xlsx data/raw/
+          fi
+          python src/data_load.py
+
+      - name: Запуск data_quality_analysis
+        run: |
+          mkdir -p artifacts/data_quality_analysis
+          python src/data_quality_analysis.py 2>&1 | tee artifacts/data_quality_analysis/run.log
+
+      - name: Завантаження артефактів
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-data_quality_analysis
+          path: artifacts/data_quality_analysis
+          retention-days: 7
+
+  data_research:
+    runs-on: ubuntu-latest
+    needs: data_load
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.module == 'all' ||
+      github.event.inputs.module == 'data_research'
+    steps:
+      - name: Checkout коду
+        uses: actions/checkout@v4
+
+      - name: Налаштування Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Встановлення залежностей
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Підготовка даних
+        run: |
+          mkdir -p data/raw
+          if [ -f "data/129-indeksi-tsin-na-zhitlo.xlsx" ]; then
+            cp data/129-indeksi-tsin-na-zhitlo.xlsx data/raw/
+          fi
+          python src/data_load.py
+
+      - name: Запуск data_research
+        run: |
+          mkdir -p artifacts/data_research
+          python src/data_research.py 2>&1 | tee artifacts/data_research/run.log
+
+      - name: Завантаження артефактів
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-data_research
+          path: artifacts/data_research
+          retention-days: 7
+
+  visualization:
+    runs-on: ubuntu-latest
+    needs: data_load
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.module == 'all' ||
+      github.event.inputs.module == 'visualization'
+    steps:
+      - name: Checkout коду
+        uses: actions/checkout@v4
+
+      - name: Налаштування Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Встановлення залежностей
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Підготовка даних
+        run: |
+          mkdir -p data/raw
+          if [ -f "data/129-indeksi-tsin-na-zhitlo.xlsx" ]; then
+            cp data/129-indeksi-tsin-na-zhitlo.xlsx data/raw/
+          fi
+          python src/data_load.py
+
+      - name: Запуск visualization
+        run: |
+          mkdir -p artifacts/visualization
+          python src/visualization.py 2>&1 | tee artifacts/visualization/run.log
+
+      - name: Завантаження артефактів
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-visualization
+          path: artifacts/visualization
           retention-days: 7
