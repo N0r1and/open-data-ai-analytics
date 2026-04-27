@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1>Візуалізація</h1>
+    {% if plots %}
+    <p style="color:#666; margin-bottom:20px;">Графіки згенеровано сервісом visualization на основі даних з PostgreSQL.</p>
+
+    <div class="card">
+        <h2>Графік 1: Загальний тренд цін</h2>
+        <p style="color:#666; font-size:14px;">Динаміка загального індексу цін на житло (до попереднього кварталу) з позначкою повномасштабного вторгнення 24.02.2022</p>
+        <img class="plot" src="/plots/fig1_overall_trend.png" alt="Загальний тренд">
+    </div>
+
+    <div class="card">
+        <h2>Графік 2: Первинний vs Вторинний ринок</h2>
+        <p style="color:#666; font-size:14px;">Порівняння індексів цін на первинному та вторинному ринках нерухомості (до відповідного кварталу попереднього року)</p>
+        <img class="plot" src="/plots/fig2_primary_vs_secondary.png" alt="Первинний vs Вторинний">
+    </div>
+
+    <div class="card">
+        <h2>Графік 3: Сезонність</h2>
+        <p style="color:#666; font-size:14px;">Boxplot розподілу квартального індексу по кожному з 4 кварталів — дозволяє виявити сезонні патерни</p>
+        <img class="plot" src="/plots/fig3_seasonality.png" alt="Сезонність">
+    </div>
+
+    <div class="card">
+        <h2>Графік 4: Теплова карта</h2>
+        <p style="color:#666; font-size:14px;">Середній річний індекс цін по всіх категоріях квартир (зелений — зростання, червоний — спад)</p>
+        <img class="plot" src="/plots/fig4_heatmap.png" alt="Теплова карта">
+    </div>
+
+    {% else %}
+    <p style="color:#e74c3c;">Графіки ще не згенеровано. Зачекайте завершення сервісу visualization.</p>
+    {% endif %}
+</div>
+{% endblock %}

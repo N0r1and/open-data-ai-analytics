@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1>Дослідницький аналіз</h1>
+    {% if results and not results.get('error') %}
+
+    <h2>Базові статистики (загальний індекс, код 010)</h2>
+    <div class="stat-grid">
+        <div class="stat-box"><div class="val">{{ results.basic_stats.count }}</div><div class="lbl">Кварталів</div></div>
+        <div class="stat-box"><div class="val">{{ results.basic_stats.mean }}%</div><div class="lbl">Середнє</div></div>
+        <div class="stat-box"><div class="val">{{ results.basic_stats.median }}%</div><div class="lbl">Медіана</div></div>
+        <div class="stat-box"><div class="val">{{ results.basic_stats.std }}%</div><div class="lbl">Стд. відхилення</div></div>
+        <div class="stat-box"><div class="val">{{ results.basic_stats.min }}%</div><div class="lbl">Мінімум</div></div>
+        <div class="stat-box"><div class="val">{{ results.basic_stats.max }}%</div><div class="lbl">Максимум</div></div>
+    </div>
+
+    <h2 style="margin-top:25px;">Перевірка гіпотез</h2>
+    {% for h in results.hypotheses %}
+    <div class="card" style="border-left: 4px solid #2E75B6; margin-bottom:15px;">
+        <h3>{{ h.name }}</h3>
+        <table style="margin-top:10px;">
+            {% if h.get('mean_before') %}
+            <tr><td style="color:#666;">До вторгнення</td><td><b>{{ h.mean_before }}%</b></td></tr>
+            <tr><td style="color:#666;">Після вторгнення</td><td><b>{{ h.mean_after }}%</b></td></tr>
+            <tr><td style="color:#666;">t-статистика</td><td>{{ h.t_stat }}</td></tr>
+            {% endif %}
+            {% if h.get('mean_primary') %}
+            <tr><td style="color:#666;">Первинний ринок (середнє)</td><td><b>{{ h.mean_primary }}%</b></td></tr>
+            <tr><td style="color:#666;">Вторинний ринок (середнє)</td><td><b>{{ h.mean_secondary }}%</b></td></tr>
+            <tr><td style="color:#666;">U-статистика</td><td>{{ h.u_stat }}</td></tr>
+            {% endif %}
+            {% if h.get('means_by_quarter') %}
+            {% for q, v in h.means_by_quarter.items() %}
+            <tr><td style="color:#666;">{{ q }}</td><td><b>{{ v }}%</b></td></tr>
+            {% endfor %}
+            <tr><td style="color:#666;">F-статистика</td><td>{{ h.f_stat }}</td></tr>
+            {% endif %}
+            <tr><td style="color:#666;">p-value</td><td>{{ h.p_value }}</td></tr>
+        </table>
+        <div class="conclusion">
+            {% if h.significant %}
+            <span class="badge badge-green">✓ Значуще</span>
+            {% else %}
+            <span class="badge badge-red">✗ Не значуще</span>
+            {% endif %}
+            &nbsp; {{ h.conclusion }}
+        </div>
+    </div>
+    {% endfor %}
+
+    {% elif results and results.get('error') %}
+    <p style="color:#e74c3c;">Помилка: {{ results.error }}</p>
+    {% else %}
+    <p style="color:#e74c3c;">Результати ще не готові. Зачекайте завершення сервісу data_research.</p>
+    {% endif %}
+</div>
+{% endblock %}

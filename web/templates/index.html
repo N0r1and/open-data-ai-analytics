@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1>Аналіз індексів цін на житло в Україні</h1>
+    <p style="color:#666; margin-bottom:20px;">
+        Проєкт аналізує відкриті дані Державної служби статистики України
+        про індекси цін на житло (2016–2025 рр.) на первинному та вторинному ринках.
+    </p>
+    <div class="stat-grid">
+        <div class="stat-box"><div class="val">4</div><div class="lbl">Мікросервіси</div></div>
+        <div class="stat-box"><div class="val">9</div><div class="lbl">Категорій даних</div></div>
+        <div class="stat-box"><div class="val">38</div><div class="lbl">Кварталів (2016–2025)</div></div>
+        <div class="stat-box"><div class="val">3</div><div class="lbl">Гіпотези перевірено</div></div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Структура проєкту</h2>
+    <table>
+        <tr><th>Сервіс</th><th>Призначення</th><th>Статус</th></tr>
+        <tr><td><b>data_load</b></td><td>Завантаження XLSX → PostgreSQL</td><td><span class="badge badge-green">✓ виконано</span></td></tr>
+        <tr><td><b>data_quality_analysis</b></td><td>Перевірка якості даних</td><td><span class="badge badge-green">✓ виконано</span></td></tr>
+        <tr><td><b>data_research</b></td><td>Статистичний аналіз, гіпотези</td><td><span class="badge badge-green">✓ виконано</span></td></tr>
+        <tr><td><b>visualization</b></td><td>Побудова графіків PNG</td><td><span class="badge badge-green">✓ виконано</span></td></tr>
+        <tr><td><b>web</b></td><td>Цей веб-інтерфейс (Flask)</td><td><span class="badge badge-blue">▶ активний</span></td></tr>
+        <tr><td><b>db</b></td><td>PostgreSQL база даних</td><td><span class="badge badge-green">✓ активна</span></td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Гіпотези дослідження</h2>
+    <ul style="line-height:2; padding-left:20px; color:#555;">
+        <li>Чи спричинило повномасштабне вторгнення (2022) значний зсув у цінах?</li>
+        <li>Чи зростають ціни на первинному ринку швидше ніж на вторинному?</li>
+        <li>Чи існує сезонність у квартальних змінах цін?</li>
+    </ul>
+</div>
+{% endblock %}

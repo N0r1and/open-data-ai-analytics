@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1>Перевірка якості даних</h1>
+    {% if report and not report.get('error') %}
+
+    <div class="stat-grid">
+        <div class="stat-box"><div class="val">{{ report.total_rows }}</div><div class="lbl">Записів у БД</div></div>
+        <div class="stat-box"><div class="val">{{ report.duplicates }}</div><div class="lbl">Дублікатів</div></div>
+        <div class="stat-box"><div class="val">{{ report.period_range.total_quarters }}</div><div class="lbl">Унікальних кварталів</div></div>
+        <div class="stat-box"><div class="val">{{ report.unique_codes | length }}</div><div class="lbl">Категорій</div></div>
+    </div>
+
+    <h2 style="margin-top:20px;">Часовий ряд</h2>
+    <p>З <b>{{ report.period_range.first }}</b> по <b>{{ report.period_range.last }}</b></p>
+
+    <h2 style="margin-top:20px;">Пропущені значення</h2>
+    <table>
+        <tr><th>Колонка</th><th>Пропусків</th><th>Відсоток</th></tr>
+        {% for col, cnt in report.missing_values.items() %}
+        <tr>
+            <td>{{ col }}</td>
+            <td>{{ cnt }}</td>
+            <td>
+                {% if report.missing_pct[col] > 10 %}
+                <span class="badge badge-red">{{ report.missing_pct[col] }}%</span>
+                {% else %}
+                <span class="badge badge-green">{{ report.missing_pct[col] }}%</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2 style="margin-top:20px;">Статистика числових індексів</h2>
+    <table>
+        <tr><th>Колонка</th><th>Мін</th><th>Макс</th><th>Середнє</th><th>Аномалій</th></tr>
+        {% for col, s in report.statistics.items() %}
+        <tr>
+            <td>{{ col }}</td>
+            <td>{{ s.min }}</td>
+            <td>{{ s.max }}</td>
+            <td>{{ s.mean }}</td>
+            <td>
+                {% if s.anomalies > 0 %}
+                <span class="badge badge-red">{{ s.anomalies }}</span>
+                {% else %}
+                <span class="badge badge-green">0</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% elif report and report.get('error') %}
+    <p style="color:#e74c3c;">Помилка: {{ report.error }}</p>
+    {% else %}
+    <p style="color:#e74c3c;">Звіт ще не згенеровано. Зачекайте завершення сервісу data_quality_analysis.</p>
+    {% endif %}
+</div>
+{% endblock %}

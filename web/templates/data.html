@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1>Завантажені дані</h1>
+    <p style="color:#666; margin-bottom:15px;">
+        Джерело: <a href="https://data.gov.ua/dataset/85e5e66c-be8b-4e75-a7df-d3e4c886fa73" target="_blank">data.gov.ua — Індекси цін на житло</a>
+        &nbsp;|&nbsp; Всього записів у БД: <b>{{ total }}</b> &nbsp;|&nbsp; Показано перші 50
+    </p>
+    {% if rows %}
+    <table>
+        <tr>{% for col in columns %}<th>{{ col }}</th>{% endfor %}</tr>
+        {% for row in rows %}
+        <tr>{% for cell in row %}<td>{{ cell if cell is not none else '—' }}</td>{% endfor %}</tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p style="color:#e74c3c;">Дані ще не завантажено. Зачекайте завершення сервісу data_load.</p>
+    {% endif %}
+</div>
+{% endblock %}

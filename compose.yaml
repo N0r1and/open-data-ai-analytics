@@ -1,0 +1,126 @@
+services:
+
+  # ──────────────────────────────────────────
+  # База даних PostgreSQL
+  # ──────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: housing_db
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - housing_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ──────────────────────────────────────────
+  # Завантаження даних
+  # ──────────────────────────────────────────
+  data_load:
+    build: ./data_load
+    container_name: housing_data_load
+    env_file: .env
+    volumes:
+      - ./data:/data:ro
+    networks:
+      - housing_net
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ──────────────────────────────────────────
+  # Перевірка якості даних
+  # ──────────────────────────────────────────
+  data_quality_analysis:
+    build: ./data_quality_analysis
+    container_name: housing_quality
+    env_file: .env
+    volumes:
+      - reports:/reports
+    networks:
+      - housing_net
+    depends_on:
+      db:
+        condition: service_healthy
+      data_load:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # ──────────────────────────────────────────
+  # Дослідницький аналіз
+  # ──────────────────────────────────────────
+  data_research:
+    build: ./data_research
+    container_name: housing_research
+    env_file: .env
+    volumes:
+      - reports:/reports
+    networks:
+      - housing_net
+    depends_on:
+      db:
+        condition: service_healthy
+      data_load:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # ──────────────────────────────────────────
+  # Візуалізація
+  # ──────────────────────────────────────────
+  visualization:
+    build: ./visualization
+    container_name: housing_viz
+    env_file: .env
+    volumes:
+      - plots:/plots
+    networks:
+      - housing_net
+    depends_on:
+      db:
+        condition: service_healthy
+      data_load:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # ──────────────────────────────────────────
+  # Веб-інтерфейс
+  # ──────────────────────────────────────────
+  web:
+    build: ./web
+    container_name: housing_web
+    env_file: .env
+    ports:
+      - "5000:5000"
+    volumes:
+      - reports:/reports:ro
+      - plots:/plots:ro
+    networks:
+      - housing_net
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+# ──────────────────────────────────────────
+# Томи для збереження результатів
+# ──────────────────────────────────────────
+volumes:
+  db_data:
+  reports:
+  plots:
+
+# ──────────────────────────────────────────
+# Мережа для взаємодії між контейнерами
+# ──────────────────────────────────────────
+networks:
+  housing_net:
+    driver: bridge
