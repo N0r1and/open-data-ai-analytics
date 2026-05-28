@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: housing-app
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/N0r1and/open-data-ai-analytics
+    targetRevision: main
+    path: gitops/app
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: housing
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
