@@ -110,17 +110,92 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-# ──────────────────────────────────────────
-# Томи для збереження результатів
-# ──────────────────────────────────────────
+  # ──────────────────────────────────────────
+  # Prometheus — збір метрик
+  # ──────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: monitoring_prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    networks:
+      - housing_net
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────
+  # Grafana — візуалізація метрик
+  # ──────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: monitoring_grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - housing_net
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────
+  # Node Exporter — метрики системи
+  # ──────────────────────────────────────────
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: monitoring_node_exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    ports:
+      - "9100:9100"
+    networks:
+      - housing_net
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────
+  # cAdvisor — метрики контейнерів
+  # ──────────────────────────────────────────
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: monitoring_cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8081:8080"
+    networks:
+      - housing_net
+    restart: unless-stopped
+
 volumes:
   db_data:
   reports:
   plots:
+  prometheus_data:
+  grafana_data:
 
-# ──────────────────────────────────────────
-# Мережа для взаємодії між контейнерами
-# ──────────────────────────────────────────
 networks:
   housing_net:
     driver: bridge

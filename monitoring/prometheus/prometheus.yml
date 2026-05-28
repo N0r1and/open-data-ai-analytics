@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  # Сам Prometheus
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Node Exporter — метрики Linux VM (CPU, RAM, диск, мережа)
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # cAdvisor — метрики Docker-контейнерів
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  # Веб-інтерфейс Flask (якщо є /metrics endpoint)
+  - job_name: "web-app"
+    static_configs:
+      - targets: ["web:5000"]
+    metrics_path: "/metrics"

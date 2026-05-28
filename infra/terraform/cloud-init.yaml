@@ -1,0 +1,47 @@
+#cloud-config
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+
+runcmd:
+  # Встановлення Docker
+  - curl -fsSL https://get.docker.com -o get-docker.sh
+  - sh get-docker.sh
+  - systemctl start docker
+  - systemctl enable docker
+
+  # Встановлення Docker Compose plugin
+  - mkdir -p /usr/local/lib/docker/cli-plugins
+  - curl -SL https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+  - chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+  # Клонування репозиторію
+  - git clone https://github.com/N0r1and/open-data-ai-analytics.git /app
+
+  # Створення .env файлу
+  - |
+    cat > /app/.env << 'EOF'
+    POSTGRES_HOST=db
+    POSTGRES_PORT=5432
+    POSTGRES_DB=housing
+    POSTGRES_USER=admin
+    POSTGRES_PASSWORD=admin123
+    EOF
+
+  # Запуск основного проєкту
+  - cd /app && docker compose up -d
+
+  # Пауза щоб мережа housing_net встигла створитись
+  - sleep 15
+
+  # Запуск моніторингу
+  - cd /app/monitoring && docker compose -f docker-compose.monitoring.yml up -d
+
+  - echo "cloud-init completed at $(date)" >> /var/log/cloud-init-custom.log
