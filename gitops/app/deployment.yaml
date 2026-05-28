@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: housing-web
+  namespace: housing
+  labels:
+    app: housing-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: housing-web
+  template:
+    metadata:
+      labels:
+        app: housing-web
+    spec:
+      containers:
+        - name: housing-web
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          env:
+            - name: APP_VERSION
+              value: "v1.0"
